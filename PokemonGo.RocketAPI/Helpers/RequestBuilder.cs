@@ -115,7 +115,8 @@ namespace PokemonGo.RocketAPI.Helpers
                 Latitude = (float)_latitude,
                 Longitude = (float)_longitude,
                 Altitude = (float)_altitude,
-                TimestampSinceStart = (ulong)InternalWatch.ElapsedMilliseconds - 200,
+                //TimestampSinceStart = (ulong)InternalWatch.ElapsedMilliseconds - 200,
+                TimestampSnapshot = (ulong)InternalWatch.ElapsedMilliseconds - 200,
                 Floor = 3,
                 LocationType = 1
             });
@@ -139,7 +140,10 @@ namespace PokemonGo.RocketAPI.Helpers
                 sig.RequestHash.Add(BitConverter.ToUInt64(x.ComputeHash(req.ToByteArray()), 0));
 
             //static for now
-            sig.Unk22 = ByteString.CopyFrom(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F);
+            //sig.Unk22 = ByteString.CopyFrom(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F);
+            sig.SessionHash = ByteString.CopyFrom(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F);
+            sig.Unknown25 = -8537042734809897855;
+
 
 
             var val = new Unknown6
