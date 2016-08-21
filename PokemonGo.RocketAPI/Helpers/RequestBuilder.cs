@@ -25,6 +25,7 @@ namespace PokemonGo.RocketAPI.Helpers
         private readonly AuthTicket _authTicket;
         private static readonly Stopwatch InternalWatch = new Stopwatch();
         private readonly ISettings _settings;
+        private readonly ByteString _sessionHash;
 
         public RequestBuilder(string authToken, AuthType authType, double latitude, double longitude, double altitude, ISettings settings, AuthTicket authTicket = null)
         {
@@ -37,6 +38,12 @@ namespace PokemonGo.RocketAPI.Helpers
             _authTicket = authTicket;
             if (!InternalWatch.IsRunning)
                 InternalWatch.Start();
+
+            var hashBytes = new byte[16];
+
+            RandomDevice.NextBytes(hashBytes);
+
+            _sessionHash = ByteString.CopyFrom(hashBytes);
 
             if (_encryptNative != null) return;
             if (IntPtr.Size == 4)
@@ -141,7 +148,7 @@ namespace PokemonGo.RocketAPI.Helpers
 
             //static for now
             //sig.Unk22 = ByteString.CopyFrom(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F);
-            sig.SessionHash = ByteString.CopyFrom(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F);
+            sig.SessionHash = _sessionHash;
             sig.Unknown25 = -8537042734809897855;
 
 
