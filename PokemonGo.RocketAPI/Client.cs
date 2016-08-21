@@ -43,6 +43,10 @@ namespace PokemonGo.RocketAPI
         public double CurrentLongitude { get; internal set; }
         public double CurrentAltitude { get; internal set; }
 
+        public double InitialLatitude { get; internal set; }
+        public double InitialLongitude { get; internal set; }
+        public double InitialAltitude { get; internal set; }
+
         public AuthType AuthType => Settings.AuthType;
 
         internal PokemonHttpClient PokemonHttpClient => new PokemonHttpClient(proxy);
@@ -64,6 +68,7 @@ namespace PokemonGo.RocketAPI
             Encounter = new Rpc.Encounter(this);
             Misc = new Rpc.Misc(this);
 
+            Player.SetInitial(Settings.DefaultLatitude, Settings.DefaultLongitude, Settings.DefaultAltitude);
             Player.SetCoordinates(Settings.DefaultLatitude, Settings.DefaultLongitude, Settings.DefaultAltitude);
         }
     }

@@ -41,6 +41,13 @@ namespace PokemonGo.RocketAPI.Rpc
             _client.CurrentAltitude = altitude;
         }
 
+        public void SetInitial(double lat, double lng, double altitude)
+        {
+            _client.InitialLatitude = lat;
+            _client.InitialLongitude = lng;
+            _client.InitialAltitude = altitude;
+        }
+
         public async Task<GetPlayerResponse> GetPlayer()
         {
             return await PostProtoPayload<Request, GetPlayerResponse>(RequestType.GetPlayer, new GetPlayerMessage());
