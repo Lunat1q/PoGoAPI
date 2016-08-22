@@ -8,6 +8,7 @@ using PokemonGo.RocketAPI.Login;
 using POGOProtos.Networking.Requests;
 using POGOProtos.Networking.Requests.Messages;
 using System.Net;
+using POGOProtos.Networking.Envelopes;
 
 namespace PokemonGo.RocketAPI.Rpc
 {
@@ -106,6 +107,37 @@ namespace PokemonGo.RocketAPI.Rpc
 
             _client.AuthTicket = serverResponse.AuthTicket;
             _client.ApiUrl = serverResponse.ApiUrl;
+        }
+
+        public async Task UpdateApiTicket()
+        {
+            var getPlayerMessage = new GetPlayerMessage();
+            var downloadSettingsMessage = new DownloadSettingsMessage
+            {
+                Hash = "54b359c97e46900f87211ef6e6dd0b7f2a3ea1f5" //"05daf51635c82611d1aac95c0b051d3ec088a930"
+            };
+
+            var serverRequest = RequestBuilder.GetInitialRequestEnvelope(
+                new Request
+                {
+                    RequestType = RequestType.GetPlayer,
+                    RequestMessage = getPlayerMessage.ToByteString()
+                }, new Request
+                {
+                    RequestType = RequestType.DownloadSettings,
+                    RequestMessage = downloadSettingsMessage.ToByteString()
+                });
+
+            var serverResponse = await PostProto<Request>(Resources.RpcUrl, serverRequest);
+
+            if (serverResponse?.AuthTicket != null)
+            {
+                _client.AuthTicket = serverResponse.AuthTicket;
+                RequestBuilder.SetNewTicket(serverResponse.AuthTicket);
+                if (serverResponse.ApiUrl != null)
+                    _client.ApiUrl = serverResponse.ApiUrl;
+            }
+
         }
 
     }

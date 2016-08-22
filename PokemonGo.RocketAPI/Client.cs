@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Threading.Tasks;
 using PokemonGo.RocketAPI.Enums;
 using PokemonGo.RocketAPI.Extensions;
 using PokemonGo.RocketAPI.HttpClient;
@@ -57,8 +58,6 @@ namespace PokemonGo.RocketAPI
         {
             Settings = settings;
             ApiFailure = apiFailureStrategy;
-
-
             Login = new Rpc.Login(this);
             Player = new Rpc.Player(this);
             Download = new Rpc.Download(this);
@@ -70,6 +69,11 @@ namespace PokemonGo.RocketAPI
 
             Player.SetInitial(Settings.DefaultLatitude, Settings.DefaultLongitude, Settings.DefaultAltitude);
             Player.SetCoordinates(Settings.DefaultLatitude, Settings.DefaultLongitude, Settings.DefaultAltitude);
+        }
+
+        public async Task UpdateTicket()
+        {
+             await Login.UpdateApiTicket();
         }
     }
 }

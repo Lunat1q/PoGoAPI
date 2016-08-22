@@ -22,10 +22,15 @@ namespace PokemonGo.RocketAPI.Helpers
         private readonly double _latitude;
         private readonly double _longitude;
         private readonly double _altitude;
-        private readonly AuthTicket _authTicket;
+        private AuthTicket _authTicket;
         private static readonly Stopwatch InternalWatch = new Stopwatch();
         private readonly ISettings _settings;
         private readonly ByteString _sessionHash;
+
+        public void SetNewTicket(AuthTicket ticket)
+        {
+            _authTicket = ticket;
+        }
 
         public RequestBuilder(string authToken, AuthType authType, double latitude, double longitude, double altitude, ISettings settings, AuthTicket authTicket = null)
         {

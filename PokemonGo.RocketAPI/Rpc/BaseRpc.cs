@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using PokemonGo.RocketAPI.Exceptions;
 using PokemonGo.RocketAPI.Extensions;
 using PokemonGo.RocketAPI.Helpers;
 using POGOProtos.Networking.Envelopes;
 using POGOProtos.Networking.Requests;
+using POGOProtos.Networking.Requests.Messages;
 
 namespace PokemonGo.RocketAPI.Rpc
 {
