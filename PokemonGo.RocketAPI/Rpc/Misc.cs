@@ -1,4 +1,6 @@
 ﻿using System.Threading.Tasks;
+using Google.Protobuf.Collections;
+using POGOProtos.Enums;
 using POGOProtos.Networking.Requests;
 using POGOProtos.Networking.Requests.Messages;
 using POGOProtos.Networking.Responses;
@@ -44,9 +46,14 @@ namespace PokemonGo.RocketAPI.Rpc
             return await PostProtoPayload<Request, EchoResponse>(RequestType.Echo, new EchoMessage());
         }
 
-        public async Task<EncounterTutorialCompleteResponse> MarkTutorialComplete()
+        public async Task<EncounterTutorialCompleteResponse> MarkTutorialComplete(RepeatedField<TutorialState> toComplete )
         {
-            return await PostProtoPayload<Request, EncounterTutorialCompleteResponse>(RequestType.MarkTutorialComplete, new MarkTutorialCompleteMessage());
+            return await PostProtoPayload<Request, EncounterTutorialCompleteResponse>(RequestType.MarkTutorialComplete, new MarkTutorialCompleteMessage()
+            {
+                SendMarketingEmails = false,
+                SendPushNotifications = false,
+                TutorialsCompleted = { toComplete }
+            });
         }
     }
 }

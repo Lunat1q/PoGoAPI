@@ -25,14 +25,19 @@ namespace PokemonGo.RocketAPI.Helpers
                 try
                 {
                     var response = await base.SendAsync(request, cancellationToken);
-                    if (response.StatusCode == HttpStatusCode.BadGateway || response.StatusCode == HttpStatusCode.InternalServerError)
-                        throw new Exception(); //todo: proper implementation
+                    if (response.StatusCode == HttpStatusCode.BadGateway ||
+                        response.StatusCode == HttpStatusCode.InternalServerError)
+                        throw new Exception($"{response.StatusCode}"); //todo: proper implementation
 
                     return response;
                 }
+                catch (TaskCanceledException)
+                {
+                    return null;
+                }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[#{i} of {MaxRetries}] retry request {request.RequestUri} - Error: {ex}");
+                    Debug.WriteLine($"[#{i} of {MaxRetries}] retry request {request.RequestUri} - Error: {ex.Message}");
                     if (i < MaxRetries)
                     {
                         await Task.Delay(1000, cancellationToken);

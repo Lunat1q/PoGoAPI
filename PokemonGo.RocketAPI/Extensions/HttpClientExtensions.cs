@@ -93,18 +93,33 @@ namespace PokemonGo.RocketAPI.Extensions
         public static async Task<ResponseEnvelope> PostProto<TRequest>(this System.Net.Http.HttpClient client, string url,
             RequestEnvelope requestEnvelope) where TRequest : IMessage<TRequest>
         {
-            //Encode payload and put in envelop, then send
-            if (requestEnvelope == null) return new ResponseEnvelope();
-            var data = requestEnvelope.ToByteString();
-            var result = await client.PostAsync(url, new ByteArrayContent(data.ToByteArray()));
+            HttpResponseMessage result = null;
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    //Encode payload and put in envelop, then send
+                    if (requestEnvelope == null) return new ResponseEnvelope();
+                    var data = requestEnvelope.ToByteString();
+                    result = await client.PostAsync(url, new ByteArrayContent(data.ToByteArray()));
+                    break;
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
 
-            //Decode message
-            var responseData = await result.Content.ReadAsByteArrayAsync();
-            var codedStream = new CodedInputStream(responseData);
-            var decodedResponse = new ResponseEnvelope();
-            decodedResponse.MergeFrom(codedStream);
+            {
+                //Decode message
+                var responseData = await result.Content.ReadAsByteArrayAsync();
+                var codedStream = new CodedInputStream(responseData);
+                var decodedResponse = new ResponseEnvelope();
+                decodedResponse.MergeFrom(codedStream);
 
-            return decodedResponse;
+                return decodedResponse;
+            }
+            return new ResponseEnvelope();
         }
     }
 }

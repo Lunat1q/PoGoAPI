@@ -248,6 +248,7 @@ namespace PokemonGo.RocketAPI.Helpers
 
         public RequestEnvelope GetRequestEnvelope(params Request[] customRequests)
         {
+            if (_authTicket == null) return new RequestEnvelope();
             var e = new RequestEnvelope
             {
                 StatusCode = 2, //1
