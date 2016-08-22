@@ -110,6 +110,7 @@ namespace PokemonGo.RocketAPI.Extensions
                 }
             }
 
+            if (result != null)
             {
                 //Decode message
                 var responseData = await result.Content.ReadAsByteArrayAsync();
