@@ -22,15 +22,10 @@ namespace PokemonGo.RocketAPI.Helpers
         private readonly double _latitude;
         private readonly double _longitude;
         private readonly double _altitude;
-        private AuthTicket _authTicket;
+        private readonly AuthTicket _authTicket;
         private static readonly Stopwatch InternalWatch = new Stopwatch();
         private readonly ISettings _settings;
         private readonly ByteString _sessionHash;
-
-        public void SetNewTicket(AuthTicket ticket)
-        {
-            _authTicket = ticket;
-        }
 
         public RequestBuilder(string authToken, AuthType authType, double latitude, double longitude, double altitude, ISettings settings, AuthTicket authTicket = null)
         {
@@ -157,7 +152,7 @@ namespace PokemonGo.RocketAPI.Helpers
             //static for now
             //sig.Unk22 = ByteString.CopyFrom(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F);
             sig.SessionHash = _sessionHash;
-            sig.Unknown25 = -8537042734809897855;
+            sig.Unknown25 = -7363665268261373700; //-8537042734809897855;
 
 
 
@@ -269,9 +264,10 @@ namespace PokemonGo.RocketAPI.Helpers
                 Longitude = _longitude, //8
                 Altitude = _altitude, //9
                 AuthTicket = _authTicket, //11
-                Unknown12 = 989 //12
+                MsSinceLastLocationfix = RandomDevice.Next(700, 999) //12
             };
-            e.Unknown6.Add(GenerateSignature(customRequests));
+            e.Unknown6 = new Unknown6();
+            e.Unknown6.MergeFrom(GenerateSignature(customRequests));
             return e;
         }
 
@@ -297,7 +293,7 @@ namespace PokemonGo.RocketAPI.Helpers
                         Unknown2 = 14
                     }
                 }, //10
-                Unknown12 = 989 //12
+                MsSinceLastLocationfix = RandomDevice.Next(700, 999) //12
             };
             return e;
         }

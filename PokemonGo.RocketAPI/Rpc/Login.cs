@@ -132,10 +132,7 @@ namespace PokemonGo.RocketAPI.Rpc
 
             if (serverResponse?.AuthTicket != null)
             {
-                _client.AuthTicket = serverResponse.AuthTicket;
-                RequestBuilder.SetNewTicket(serverResponse.AuthTicket);
-                if (serverResponse.ApiUrl != null)
-                    _client.ApiUrl = serverResponse.ApiUrl;
+                _client.AuthTicket.MergeFrom(serverResponse.AuthTicket);
             }
 
         }

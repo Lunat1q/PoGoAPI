@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using PokemonGo.RocketAPI.Exceptions;
@@ -20,11 +21,27 @@ namespace PokemonGo.RocketAPI.Rpc
             _client = client;
         }
 
+        protected async void CheckAuth<TResponsePayload>(TResponsePayload response)
+        {
+            var haveLegitTicket = _client.AuthTicket?.End != null &&
+                              _client.AuthTicket.ExpireTimestampMs > (ulong) (DateTime.UtcNow.ToUnixTime() + 15000) &&
+                              _client.AuthTicket.Start != null;
+
+            if (!haveLegitTicket)
+            {
+                await _client.UpdateTicket();
+                Debug.Write("Auth ticket update");
+            }
+        }
+
         protected async Task<TResponsePayload> PostProtoPayload<TRequest, TResponsePayload>(RequestType type, IMessage message) where TRequest : IMessage<TRequest>
             where TResponsePayload : IMessage<TResponsePayload>, new()
         {
             var requestEnvelops = RequestBuilder.GetRequestEnvelope(type, message);
-            return await _client.PokemonHttpClient.PostProtoPayload<TRequest, TResponsePayload>(ApiUrl, requestEnvelops, _client.ApiFailure);
+
+            var response = await _client.PokemonHttpClient.PostProtoPayload<TRequest, TResponsePayload>(ApiUrl, requestEnvelops, _client.ApiFailure);
+            CheckAuth(response);
+            return response;
         }
 
         protected async Task<TResponsePayload> PostProtoPayload<TRequest, TResponsePayload>(RequestEnvelope requestEnvelope) where TRequest : IMessage<TRequest>
