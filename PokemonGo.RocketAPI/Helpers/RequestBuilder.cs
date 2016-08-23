@@ -121,7 +121,7 @@ namespace PokemonGo.RocketAPI.Helpers
             };
             sig.LocationFix.Add(new Signature.Types.LocationFix()
             {
-                Provider = "network",
+                Provider = "fused",
 
                 //Unk4 = 120,
                 Latitude = (float)_latitude,
@@ -130,6 +130,9 @@ namespace PokemonGo.RocketAPI.Helpers
                 //TimestampSinceStart = (ulong)InternalWatch.ElapsedMilliseconds - 200,
                 TimestampSnapshot = (ulong)InternalWatch.ElapsedMilliseconds - 200,
                 Floor = 3,
+                HorizontalAccuracy = (float)Math.Round(RandomDevice.NextInRange(50, 250), 7),
+                VerticalAccuracy = RandomDevice.Next(2, 5),
+                ProviderStatus = 3,
                 LocationType = 1
             });
 
