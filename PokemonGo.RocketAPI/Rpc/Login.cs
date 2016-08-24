@@ -109,6 +109,11 @@ namespace PokemonGo.RocketAPI.Rpc
             _client.ApiUrl = serverResponse.ApiUrl;
         }
 
+        public void UpdateHash()
+        {
+            RequestBuilder.GenerateNewHash();
+        }
+
         public async Task UpdateApiTicket()
         {
             var getPlayerMessage = new GetPlayerMessage();

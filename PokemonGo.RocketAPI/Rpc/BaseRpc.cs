@@ -2,12 +2,10 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Google.Protobuf;
-using PokemonGo.RocketAPI.Exceptions;
 using PokemonGo.RocketAPI.Extensions;
 using PokemonGo.RocketAPI.Helpers;
 using POGOProtos.Networking.Envelopes;
 using POGOProtos.Networking.Requests;
-using POGOProtos.Networking.Requests.Messages;
 
 namespace PokemonGo.RocketAPI.Rpc
 {
@@ -27,11 +25,9 @@ namespace PokemonGo.RocketAPI.Rpc
                               _client.AuthTicket.ExpireTimestampMs > (ulong) (DateTime.UtcNow.ToUnixTime() + 15000) &&
                               _client.AuthTicket.Start != null;
 
-            if (!haveLegitTicket)
-            {
-                await _client.UpdateTicket();
-                Debug.Write("Auth ticket update");
-            }
+            if (haveLegitTicket) return;
+            await _client.UpdateTicket();
+            Debug.Write("Auth ticket update");
         }
 
         protected async Task<TResponsePayload> PostProtoPayload<TRequest, TResponsePayload>(RequestType type, IMessage message) where TRequest : IMessage<TRequest>

@@ -1,4 +1,5 @@
-﻿using PokemonGo.RocketAPI.Enums;
+﻿using Google.Protobuf;
+using PokemonGo.RocketAPI.Enums;
 
 namespace PokemonGo.RocketAPI
 {
@@ -29,6 +30,8 @@ namespace PokemonGo.RocketAPI
         string FirmwareType { get; set; }
         string FirmwareFingerprint { get; set; }
         double MoveSpeedFactor { get; set; }
+        ByteString SessionHash { get; set; }
+
 
         bool UseProxy { get; set; }
         string ProxyUri { get; set; }

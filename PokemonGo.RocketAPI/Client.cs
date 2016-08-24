@@ -75,5 +75,9 @@ namespace PokemonGo.RocketAPI
         {
              await Login.UpdateApiTicket();
         }
+        public void UpdateHash()
+        {
+            Login.UpdateHash();
+        }
     }
 }
