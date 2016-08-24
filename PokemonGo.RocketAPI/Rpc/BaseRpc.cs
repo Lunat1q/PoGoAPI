@@ -22,7 +22,7 @@ namespace PokemonGo.RocketAPI.Rpc
         protected async void CheckAuth<TResponsePayload>(TResponsePayload response)
         {
             var haveLegitTicket = _client.AuthTicket?.End != null &&
-                              _client.AuthTicket.ExpireTimestampMs > (ulong) (DateTime.UtcNow.ToUnixTime() + 15000) &&
+                              _client.AuthTicket.ExpireTimestampMs > (ulong) (DateTime.UtcNow.ToUnixTime() + 30000) &&
                               _client.AuthTicket.Start != null;
 
             if (haveLegitTicket) return;
