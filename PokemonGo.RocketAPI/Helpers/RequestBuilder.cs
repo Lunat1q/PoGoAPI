@@ -138,8 +138,8 @@ namespace PokemonGo.RocketAPI.Helpers
                 //TimestampSinceStart = (ulong)InternalWatch.ElapsedMilliseconds - 200,
                 TimestampSnapshot = (ulong)InternalWatch.ElapsedMilliseconds - 200,
                 Floor = 3,
-                HorizontalAccuracy = (float)Math.Round(RandomDevice.NextInRange(37, 239), 7),
-                VerticalAccuracy = RandomDevice.Next(2, 5),
+                HorizontalAccuracy = (float)Math.Round(RandomDevice.NextInRange(4, 10), 6),
+                VerticalAccuracy = RandomDevice.Next(3, 7),
                 ProviderStatus = 3,
                 LocationType = 1
             });
