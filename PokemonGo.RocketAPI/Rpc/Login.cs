@@ -1,146 +1,192 @@
+﻿#region using directives
+
 using System;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using PokemonGo.RocketAPI.Enums;
 using PokemonGo.RocketAPI.Exceptions;
-using PokemonGo.RocketAPI.Extensions;
-using PokemonGo.RocketAPI.Login;
-using POGOProtos.Networking.Requests;
-using POGOProtos.Networking.Requests.Messages;
-using System.Net;
+using PokemonGo.RocketAPI.Helpers;
 using POGOProtos.Networking.Envelopes;
+using POGOProtos.Networking.Requests;
+using POGOProtos.Networking.Responses;
+using System.IO;
+using Newtonsoft.Json;
+using System.Threading;
+using POGOLib.Official.LoginProviders;
+using POGOLib.Official.Net;
+using POGOLib.Official.Net.Authentication.Data;
+
+#endregion
 
 namespace PokemonGo.RocketAPI.Rpc
 {
     public delegate void GoogleDeviceCodeDelegate(string code, string uri);
+
     public class Login : BaseRpc
     {
-        //public event GoogleDeviceCodeDelegate GoogleDeviceCodeEvent;
-        private ILoginType login;
-
+        private static Semaphore ReauthenticateMutex { get; } = new Semaphore(1, 1);
         public Login(Client client) : base(client)
         {
-            login = SetLoginType(client.Settings);
+            Client.LoginProvider = SetLoginType(client.Settings);
+            Client.ApiUrl = Resources.RpcUrl;
         }
 
-        private static ILoginType SetLoginType(ISettings settings)
+        private static ILoginProvider SetLoginType(ISettings settings)
         {
-            WebProxy prox = null;
-            if (settings.UseProxy)
-            {
-                NetworkCredential proxyCreds = null;
-                if (settings.ProxyLogin != "")
-                    proxyCreds = new NetworkCredential(settings.ProxyLogin, settings.ProxyPass);
-                prox = new WebProxy(settings.ProxyUri)
-                {
-                    UseDefaultCredentials = false,
-                    Credentials = proxyCreds,
-                };
-            }
-
             switch (settings.AuthType)
             {
                 case AuthType.Google:
-                    return new GoogleLogin(settings.GoogleUsername, settings.GooglePassword, prox);
+                    return new GoogleLoginProvider(settings.GoogleUsername, settings.GooglePassword);
                 case AuthType.Ptc:
-                    return new PtcLogin(settings.PtcUsername, settings.PtcPassword, prox);
+                    return new PtcLoginProvider(settings.PtcUsername, settings.PtcPassword);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(settings.AuthType), "Unknown AuthType");
             }
         }
 
+        private static async Task<AccessToken> LoadAccessToken(ILoginProvider loginProvider, Client client, bool mayCache = false)
+        {
+            var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), "Cache");
+            var fileName = Path.Combine(cacheDir, $"{loginProvider.UserId}-{loginProvider.ProviderId}.json");
+            
+            if (mayCache)
+            {
+                if (!Directory.Exists(cacheDir))
+                    Directory.CreateDirectory(cacheDir);
+
+                if (File.Exists(fileName))
+                {
+                    var accessToken = JsonConvert.DeserializeObject<AccessToken>(File.ReadAllText(fileName));
+
+                    if (!accessToken.IsExpired)
+                    {
+                        client.AccessToken = accessToken;
+                        return accessToken;
+                    }
+                }
+            }
+
+            await Reauthenticate(client);
+
+            if (mayCache)
+                SaveAccessToken(client.AccessToken);
+
+            return client.AccessToken;
+        }
+
+        private static void SessionOnAccessTokenUpdated(object sender, EventArgs eventArgs)
+        {
+            var session = (Session)sender;
+
+            SaveAccessToken(session.AccessToken);
+        }
+
+        public static void SaveAccessToken(AccessToken accessToken)
+        {
+            if (accessToken == null || string.IsNullOrEmpty(accessToken.Uid))
+                return;
+
+            var fileName = Path.Combine(Directory.GetCurrentDirectory(), "Cache", $"{accessToken.Uid}.json");
+
+            File.WriteAllText(fileName, JsonConvert.SerializeObject(accessToken, Formatting.Indented));
+        }
+
+        public static async Task Reauthenticate(Client client)
+        {
+            try
+            {
+                ReauthenticateMutex.WaitOne();
+
+                var tries = 0;
+                while (null == client.AccessToken || client.AccessToken.IsExpired || client.AccessToken.Token == null)
+                {
+                    try
+                    {
+                        client.AccessToken = await client.LoginProvider.GetAccessToken();
+                    }
+                    catch (Exception)
+                    {
+                        //Logger.Error($"Reauthenticate exception was catched: {exception}");
+                    }
+                    finally
+                    {
+                        if (client.AccessToken == null || client.AccessToken.Token == null)
+                        {
+                            var sleepSeconds = Math.Min(60, ++tries * 5);
+                            //Logger.Error($"Reauthentication failed, trying again in {sleepSeconds} seconds.");
+                            await Task.Delay(TimeSpan.FromMilliseconds(sleepSeconds * 1000));
+                        }
+
+                        if (tries == 10)
+                        {
+                            throw new LoginFailedException("Error refreshing access token.");
+                        }
+                    }
+                }
+                SaveAccessToken(client.AccessToken);
+            }
+            finally
+            {
+                ReauthenticateMutex.Release();
+            }
+        }
+
         public async Task DoLogin()
         {
-            _client.AuthToken = await login.GetAccessToken().ConfigureAwait(false);
-            await SetServer().ConfigureAwait(false);
+            await Client.KillswitchTask.Start();
+
+            await Login.LoadAccessToken(Client.LoginProvider, Client, true);
+            Client.StartTime = Utils.GetTime(true);
+            RequestBuilder.Reset();
+
+            await Client.Player.GetPlayer();
+
+            await
+                FireRequestBlock(CommonRequest.GetDownloadRemoteConfigVersionMessageRequest(Client))
+                    .ConfigureAwait(false);
+
+            await FireRequestBlockTwo().ConfigureAwait(false);
         }
-
-        private async Task SetServer()
+        
+        private async Task FireRequestBlock(Request request)
         {
-            #region Standard intial request messages in right Order
+            var requests = CommonRequest.FillRequest(request, Client);
 
-            var getPlayerMessage = new GetPlayerMessage();
-            var getHatchedEggsMessage = new GetHatchedEggsMessage();
-            var getInventoryMessage = new GetInventoryMessage
+            var serverRequest = await GetRequestBuilder().GetRequestEnvelope(requests);
+            var serverResponse = await PostProto<Request>(serverRequest);
+            
+            var responses = serverResponse.Returns;
+            if (responses != null)
             {
-                LastTimestampMs = DateTime.UtcNow.ToUnixTime()
-            };
-            var checkAwardedBadgesMessage = new CheckAwardedBadgesMessage();
-            var downloadSettingsMessage = new DownloadSettingsMessage
-            {
-                Hash = "54b359c97e46900f87211ef6e6dd0b7f2a3ea1f5" //"05daf51635c82611d1aac95c0b051d3ec088a930"
-            };
-
-            #endregion
-
-            var serverRequest = RequestBuilder.GetInitialRequestEnvelope(
-                new Request
+                var checkChallengeResponse = new CheckChallengeResponse();
+                if (2 <= responses.Count)
                 {
-                    RequestType = RequestType.GetPlayer,
-                    RequestMessage = getPlayerMessage.ToByteString()
-                }, new Request
-                {
-                    RequestType = RequestType.GetHatchedEggs,
-                    RequestMessage = getHatchedEggsMessage.ToByteString()
-                }, new Request
-                {
-                    RequestType = RequestType.GetInventory,
-                    RequestMessage = getInventoryMessage.ToByteString()
-                }, new Request
-                {
-                    RequestType = RequestType.CheckAwardedBadges,
-                    RequestMessage = checkAwardedBadgesMessage.ToByteString()
-                }, new Request
-                {
-                    RequestType = RequestType.DownloadSettings,
-                    RequestMessage = downloadSettingsMessage.ToByteString()
-                });
+                    checkChallengeResponse.MergeFrom(responses[1]);
 
+                    CommonRequest.ProcessCheckChallengeResponse(Client, checkChallengeResponse);
+                }
 
-            var serverResponse = await PostProto<Request>(Resources.RpcUrl, serverRequest);
+                var getInventoryResponse = new GetInventoryResponse();
+                if (4 <= responses.Count)
+                {
+                    getInventoryResponse.MergeFrom(responses[3]);
 
-            if (serverResponse.AuthTicket == null)
-            {
-                _client.AuthToken = null;
-                throw new AccessTokenExpiredException();
+                    CommonRequest.ProcessGetInventoryResponse(Client, getInventoryResponse);
+                }
+
+                var downloadSettingsResponse = new DownloadSettingsResponse();
+                if (6 <= responses.Count)
+                {
+                    downloadSettingsResponse.MergeFrom(responses[5]);
+
+                    CommonRequest.ProcessDownloadSettingsResponse(Client, downloadSettingsResponse);
+                }
             }
-
-            _client.AuthTicket = serverResponse.AuthTicket;
-            _client.ApiUrl = serverResponse.ApiUrl;
         }
 
-        public void UpdateHash()
+        public async Task FireRequestBlockTwo()
         {
-            RequestBuilder.GenerateNewHash();
+            await FireRequestBlock(CommonRequest.GetGetAssetDigestMessageRequest(Client));
         }
-
-        public async Task UpdateApiTicket()
-        {
-            var getPlayerMessage = new GetPlayerMessage();
-            var downloadSettingsMessage = new DownloadSettingsMessage
-            {
-                Hash = "54b359c97e46900f87211ef6e6dd0b7f2a3ea1f5" //"05daf51635c82611d1aac95c0b051d3ec088a930"
-            };
-
-            var serverRequest = RequestBuilder.GetInitialRequestEnvelope(
-                new Request
-                {
-                    RequestType = RequestType.GetPlayer,
-                    RequestMessage = getPlayerMessage.ToByteString()
-                }, new Request
-                {
-                    RequestType = RequestType.DownloadSettings,
-                    RequestMessage = downloadSettingsMessage.ToByteString()
-                });
-
-            var serverResponse = await PostProto<Request>(Resources.RpcUrl, serverRequest);
-
-            if (serverResponse?.AuthTicket != null)
-            {
-                _client.AuthTicket.MergeFrom(serverResponse.AuthTicket);
-            }
-
-        }
-
     }
 }
