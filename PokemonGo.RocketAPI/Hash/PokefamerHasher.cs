@@ -24,7 +24,7 @@ namespace PokemonGo.RocketAPI.Hash
             // Currently supported versions:
             // v119 -> Pogo iOS 1.19
             // v121 -> Pogo iOS 1.21
-            const string endpoint = "api/v121/hash";
+            const string endpoint = "api/v122/hash";
 
             // NOTE: This is really bad. Don't create new HttpClient's all the time.
             // Use a single client per-thread if you need one.
@@ -71,7 +71,7 @@ namespace PokemonGo.RocketAPI.Hash
                     // You should queue up your requests, and retry in a second.
                     case (HttpStatusCode)429:
                         Console.WriteLine($"Your request has been limited. {await response.Content.ReadAsStringAsync()}");
-                        await Task.Delay(60 * 1000);
+                        await Task.Delay(2 * 1000);  //stop for 2 sec
                         return await RequestHashesAsync(request);
                         break;
                 }

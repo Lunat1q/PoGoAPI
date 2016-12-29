@@ -161,9 +161,11 @@ namespace PokemonGo.RocketAPI.Helpers
                 {
                     client.InventoryLastUpdateTimestamp = getInventoryResponse.InventoryDelta.NewTimestampMs;
                 }
+
+                client.LastGetInvenrotyResponse = getInventoryResponse;
             }
         }
-
+                                            
         public static void ProcessDownloadSettingsResponse(Client client, DownloadSettingsResponse downloadSettingsResponse)
         {
             if (downloadSettingsResponse == null)
@@ -179,8 +181,11 @@ namespace PokemonGo.RocketAPI.Helpers
                 if (!string.IsNullOrEmpty(downloadSettingsResponse.Settings.MinimumClientVersion))
                 {
                     client.MinimumClientVersion = new Version(downloadSettingsResponse.Settings.MinimumClientVersion);
-                   // if (client.CheckCurrentVersionOutdated())
-                   //     throw new MinimumClientVersionException(client.CurrentApiEmulationVersion, client.MinimumClientVersion);
+                    if (!client.Settings.UseLegacyAPI)
+                    {
+                        if (client.CheckCurrentVersionOutdated())
+                            throw new MinimumClientVersionException(client.CurrentApiEmulationVersion, client.MinimumClientVersion);
+                    }
                 }
             }
         }

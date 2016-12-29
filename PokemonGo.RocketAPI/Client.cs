@@ -13,11 +13,15 @@ using POGOLib.Official.Util.Hash;
 using PokemonGo.RocketAPI.Hash;
 using PokemonGo.RocketAPI.Encrypt;
 using PokemonGo.RocketAPI.Exceptions;
+using POGOProtos.Networking.Responses;
 
 #endregion
 
 namespace PokemonGo.RocketAPI
 {
+
+    public delegate void OnInventoryUpdateHandler(GetInventoryResponse response);
+
     public class Client : ICaptchaResponseHandler
     {
         public static WebProxy Proxy;
@@ -35,6 +39,7 @@ namespace PokemonGo.RocketAPI
         public KillSwitchTask KillswitchTask;
         public Hash.IHasher Hasher;
         public ICrypt Cryptor;
+        public event OnInventoryUpdateHandler OnInventoryUpdated;
         public Client(ISettings settings)
         {
             if (settings.UsePogoDevHashServer )
@@ -43,12 +48,17 @@ namespace PokemonGo.RocketAPI
                 Hasher = new PokefamerHasher(settings.AuthAPIKey);
                 Cryptor = new Crypt();
 
+                // These constants need to change if we update the hashing server API version that is used.
+                AppVersion = 5120;
+                CurrentApiEmulationVersion = new Version("0.51.2"); 
             }
             else
             if (settings.UseLegacyAPI)
             {
                 Hasher = new LegacyHashser();
                 Cryptor = new LegacyCrypt();
+                AppVersion = 4500;
+                CurrentApiEmulationVersion = new Version("0.45.0");
 
             }
             else
@@ -101,11 +111,7 @@ namespace PokemonGo.RocketAPI
                 // Now set the client platform to ios
                 Platform = Platform.Ios;
             }
-
-            AppVersion = 4500;
             SettingsHash = "";
-
-            CurrentApiEmulationVersion = new Version("0.45.0");
         }
         
         public void SetCaptchaToken(string token)
@@ -131,14 +137,27 @@ namespace PokemonGo.RocketAPI
         internal Platform Platform { get; set; }
         internal uint AppVersion { get; set; }
         public long StartTime { get; set; }
-
+        internal GetInventoryResponse inventory;
         public Version CurrentApiEmulationVersion { get; set; }
         public Version MinimumClientVersion { get; set; }        // This is version from DownloadSettings, but after login is updated from https://pgorelease.nianticlabs.com/plfe/version
 
         //public POGOLib.Net.Session AuthSession { get; set; }
         public POGOLib.Official.LoginProviders.ILoginProvider LoginProvider { get; set; }
         public POGOLib.Official.Net.Authentication.Data.AccessToken AccessToken { get; set; }
-
+        public GetInventoryResponse LastGetInvenrotyResponse { get { return inventory; }
+            set {
+                if (inventory == null)
+                {
+                    inventory = value;
+                }
+                else {
+                    //Console.WriteLine($"{ value.InventoryDelta }");
+                    inventory.MergeWith(value);
+                }
+                if (OnInventoryUpdated!= null)
+                OnInventoryUpdated ?.Invoke( inventory);
+            }
+        }
         private WebProxy InitProxy()
         {
             if (!Settings.UseProxy) return null;

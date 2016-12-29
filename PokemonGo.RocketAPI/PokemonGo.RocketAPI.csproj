@@ -209,12 +209,14 @@
     <Compile Include="Encrypt\ICrypt.cs" />
     <Compile Include="Encrypt\Crypt.cs" />
     <Compile Include="Encrypt\LegacyCrypt.cs" />
+    <Compile Include="Exceptions\APIBadRequestExceltion.cs" />
     <Compile Include="Exceptions\AuthConfigException.cs" />
     <Compile Include="Exceptions\CaptchaException.cs" />
     <Compile Include="Exceptions\GoogleException.cs" />
     <Compile Include="Exceptions\GoogleOfflineException.cs" />
     <Compile Include="Exceptions\LoginFailedException.cs" />
     <Compile Include="Exceptions\MinimumClientVersionException.cs" />
+    <Compile Include="Extensions\GetInventoryExtensions.cs" />
     <Compile Include="Hash\PokefamerHasher.cs" />
     <Compile Include="Hash\IHasher.cs" />
     <Compile Include="Hash\LegacyHashser.cs" />
