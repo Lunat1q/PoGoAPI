@@ -1,5 +1,9 @@
-﻿using Google.Protobuf;
+﻿#region using directives
+
+using Google.Protobuf;
 using PokemonGo.RocketAPI.Enums;
+
+#endregion
 
 namespace PokemonGo.RocketAPI
 {
@@ -8,15 +12,14 @@ namespace PokemonGo.RocketAPI
         AuthType AuthType { get; set; }
         double DefaultLatitude { get; set; }
         double DefaultLongitude { get; set; }
-        double DefaultAltitudeMin { get; set; }
-        double DefaultAltitudeMax { get; set; }
         double DefaultAltitude { get; set; }
         string GoogleRefreshToken { get; set; }
         string PtcPassword { get; set; }
         string PtcUsername { get; set; }
         string GoogleUsername { get; set; }
         string GooglePassword { get; set; }
-		string DeviceId { get; set; }
+        string DevicePlatform { get; set; }
+        string DeviceId { get; set; }
         string AndroidBoardName { get; set; }
         string AndroidBootloader { get; set; }
         string DeviceBrand { get; set; }
@@ -29,13 +32,17 @@ namespace PokemonGo.RocketAPI
         string FirmwareTags { get; set; }
         string FirmwareType { get; set; }
         string FirmwareFingerprint { get; set; }
-        double MoveSpeedFactor { get; set; }
         ByteString SessionHash { get; set; }
-
-
         bool UseProxy { get; set; }
-        string ProxyUri { get; set; }
-        string ProxyLogin { get; set; }
-        string ProxyPass { get; set; }
+        bool UseProxyAuthentication { get; set; }
+        string UseProxyHost { get; set; }
+        string UseProxyPort { get; set; }
+        string UseProxyUsername { get; set; }
+        string UseProxyPassword { get; set; }
+
+        bool UsePogoDevHashServer { get; set; }
+        bool UseLegacyAPI { get; set; }
+        string AuthAPIKey { get; set; }
+        bool DisplayVerboseLog { get; set; }
     }
 }

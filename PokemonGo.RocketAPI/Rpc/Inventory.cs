@@ -1,8 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿#region using directives
+
+using System.Threading.Tasks;
 using POGOProtos.Inventory.Item;
 using POGOProtos.Networking.Requests;
 using POGOProtos.Networking.Requests.Messages;
 using POGOProtos.Networking.Responses;
+using System.Collections.Generic;
+
+#endregion
 
 namespace PokemonGo.RocketAPI.Rpc
 {
@@ -16,12 +21,24 @@ namespace PokemonGo.RocketAPI.Rpc
         {
             var message = new ReleasePokemonMessage
             {
+                
                 PokemonId = pokemonId
             };
 
+
             return await PostProtoPayload<Request, ReleasePokemonResponse>(RequestType.ReleasePokemon, message);
         }
+        public async Task<ReleasePokemonResponse> TransferPokemons(List<ulong> pokemonIds)
+        {
+            var message = new ReleasePokemonMessage
+            {
+                //PokemonIds = new Google.Protobuf.Collections.RepeatedField<ulong>() 
+            };
 
+            message.PokemonIds.AddRange(pokemonIds);
+
+            return await PostProtoPayload<Request, ReleasePokemonResponse>(RequestType.ReleasePokemon, message);
+        }
         public async Task<EvolvePokemonResponse> EvolvePokemon(ulong pokemonId)
         {
             var message = new EvolvePokemonMessage
@@ -34,7 +51,7 @@ namespace PokemonGo.RocketAPI.Rpc
 
         public async Task<UpgradePokemonResponse> UpgradePokemon(ulong pokemonId)
         {
-            var message = new UpgradePokemonMessage()
+            var message = new UpgradePokemonMessage
             {
                 PokemonId = pokemonId
             };
@@ -44,7 +61,9 @@ namespace PokemonGo.RocketAPI.Rpc
 
         public async Task<GetInventoryResponse> GetInventory()
         {
-            return await PostProtoPayload<Request, GetInventoryResponse>(RequestType.GetInventory, new GetInventoryMessage());
+            return
+                await
+                    PostProtoPayload<Request, GetInventoryResponse>(RequestType.GetInventory, new GetInventoryMessage());
         }
 
         public async Task<RecycleInventoryItemResponse> RecycleItem(ItemId itemId, int amount)
@@ -54,39 +73,44 @@ namespace PokemonGo.RocketAPI.Rpc
                 ItemId = itemId,
                 Count = amount
             };
-            
-            return await PostProtoPayload<Request, RecycleInventoryItemResponse>(RequestType.RecycleInventoryItem, message);
+
+            return
+                await PostProtoPayload<Request, RecycleInventoryItemResponse>(RequestType.RecycleInventoryItem, message);
         }
 
         public async Task<UseItemXpBoostResponse> UseItemXpBoost()
         {
-            var message = new UseItemXpBoostMessage()
+            var message = new UseItemXpBoostMessage
             {
                 ItemId = ItemId.ItemLuckyEgg
             };
-            
+
             return await PostProtoPayload<Request, UseItemXpBoostResponse>(RequestType.UseItemXpBoost, message);
         }
 
         public async Task<UseItemEggIncubatorResponse> UseItemEggIncubator(string itemId, ulong pokemonId)
         {
-            var message = new UseItemEggIncubatorMessage()
+            var message = new UseItemEggIncubatorMessage
             {
                 ItemId = itemId,
                 PokemonId = pokemonId
             };
 
-            return await PostProtoPayload<Request, UseItemEggIncubatorResponse>(RequestType.UseItemEggIncubator, message);
+            return
+                await PostProtoPayload<Request, UseItemEggIncubatorResponse>(RequestType.UseItemEggIncubator, message);
         }
 
         public async Task<GetHatchedEggsResponse> GetHatchedEgg()
         {
-            return await PostProtoPayload<Request, GetHatchedEggsResponse>(RequestType.GetHatchedEggs, new GetHatchedEggsMessage());
+            return
+                await
+                    PostProtoPayload<Request, GetHatchedEggsResponse>(RequestType.GetHatchedEggs,
+                        new GetHatchedEggsMessage());
         }
 
         public async Task<UseItemPotionResponse> UseItemPotion(ItemId itemId, ulong pokemonId)
         {
-            var message = new UseItemPotionMessage()
+            var message = new UseItemPotionMessage
             {
                 ItemId = itemId,
                 PokemonId = pokemonId
@@ -95,9 +119,9 @@ namespace PokemonGo.RocketAPI.Rpc
             return await PostProtoPayload<Request, UseItemPotionResponse>(RequestType.UseItemPotion, message);
         }
 
-  		public async Task<UseItemReviveResponse> UseItemRevive(ItemId itemId, ulong pokemonId)
+        public async Task<UseItemReviveResponse> UseItemRevive(ItemId itemId, ulong pokemonId)
         {
-            var message = new UseItemReviveMessage()
+            var message = new UseItemReviveMessage
             {
                 ItemId = itemId,
                 PokemonId = pokemonId
@@ -108,7 +132,7 @@ namespace PokemonGo.RocketAPI.Rpc
 
         public async Task<UseIncenseResponse> UseIncense(ItemId incenseType)
         {
-            var message = new UseIncenseMessage()
+            var message = new UseIncenseMessage
             {
                 IncenseType = incenseType
             };
@@ -118,12 +142,12 @@ namespace PokemonGo.RocketAPI.Rpc
 
         public async Task<UseItemGymResponse> UseItemInGym(string gymId, ItemId itemId)
         {
-            var message = new UseItemGymMessage()
+            var message = new UseItemGymMessage
             {
                 ItemId = itemId,
                 GymId = gymId,
-                PlayerLatitude = _client.CurrentLatitude,
-                PlayerLongitude = _client.CurrentLongitude
+                PlayerLatitude = Client.CurrentLatitude,
+                PlayerLongitude = Client.CurrentLongitude
             };
 
             return await PostProtoPayload<Request, UseItemGymResponse>(RequestType.UseItemGym, message);
@@ -131,7 +155,7 @@ namespace PokemonGo.RocketAPI.Rpc
 
         public async Task<NicknamePokemonResponse> NicknamePokemon(ulong pokemonId, string nickName)
         {
-            var message = new NicknamePokemonMessage()
+            var message = new NicknamePokemonMessage
             {
                 PokemonId = pokemonId,
                 Nickname = nickName
@@ -142,9 +166,9 @@ namespace PokemonGo.RocketAPI.Rpc
 
         public async Task<SetFavoritePokemonResponse> SetFavoritePokemon(ulong pokemonId, bool isFavorite)
         {
-            var message = new SetFavoritePokemonMessage()
+            var message = new SetFavoritePokemonMessage
             {
-                PokemonId = pokemonId,
+                PokemonId = (long) pokemonId,
                 IsFavorite = isFavorite
             };
 
